@@ -1,4 +1,5 @@
 import os
+import csv
 import datetime
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
@@ -72,10 +73,13 @@ while True:
 balance = total_balance(figures)
 total_interest = 0
 month = 0
+results = []
+payments_enough = True
 
 repayment = float(input("How much to repay each month > "))
 initial_repayment = repayment
 show_breakdown = input("Show breakdown? y/N > ")
+create_csv = input("Create CSV? y/N > ")
 initial_balance = str(balance)
 print("")
 print("STARTING BALANCE: " + initial_balance)
@@ -84,6 +88,7 @@ while balance > 0:
 	month +=1
 	this_month = monthly_interest(figures)
 	if this_month >= initial_repayment:
+		payments_enough = False
 		print("Repayment too low - You will never clear the balance!")
 		break
 	figures = reduce_figures(repayment, figures, this_month, balance)
@@ -98,6 +103,12 @@ while balance > 0:
 		print("Repayment: " + str(repayment))
 		print("This month's interest: " + str(round(this_month,2)))
 		print("Remaining balance: " + str(round(balance,2)))
+	if create_csv.upper() == "Y":
+		results += [[str(month),
+					str(repayment), 
+					str(round(this_month,2)), 
+					str(round(balance,2))
+					]]
 
 repayment_date = parse_date(now + relativedelta(months=month))
 
@@ -107,3 +118,11 @@ if balance == 0:
 					+ " per month would repay " + initial_balance + " (and " 
 					+ str(round(total_interest,2)) + " interest) by " 
 					+ repayment_date + " (" + str(round(month / 12, 1)) + " years)")
+
+if create_csv.upper() == "Y" and payments_enough:
+	with open('results.csv', 'w') as csvfile:
+		filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		filewriter.writerow(["month", "repayment", "interest", "balance"])
+		for i in results:
+			filewriter.writerow([i[0],i[1],i[2],i[3]])
+	print("CSV generated")
